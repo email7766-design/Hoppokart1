@@ -1,0 +1,23 @@
+{
+  "name": "hoppokart-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hoppokart e-commerce website with Express backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "webp-images": "python scripts/generate-webp.py",
+    "download-fonts": "python scripts/download-inter-fonts.py"
+  },
+  "dependencies": {
+    "compression": "^1.8.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^8.0.7",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "ejs": "^3.1.10",
+    "memory-cache": "^0.2.0"
+  }
+}

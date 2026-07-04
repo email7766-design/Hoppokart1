@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoppokart | Store Controls</title>
+<link rel="preload" href="/fonts/inter.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="/fonts/inter.css" rel="stylesheet"></noscript>
+<style>
+  :root {
+    --primary: #1b8354; --primary-dark: #116640; --accent: #f97316;
+    --bg: #f4f8ef; --card: #ffffff; --text: #152018; --muted: #4a5c4b;
+    --border: #d8e2d1; --shadow: 0 10px 30px rgba(21,32,24,0.08);
+    --danger: #dc2626; --warning: #b45309; --success: #166534;
+    --sidebar-bg: #152018; --sidebar-text: #e8f5e9; --sidebar-active: #1b8354;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: "Inter",system-ui,sans-serif; color: var(--text); background: var(--bg); display: flex; }
+  .hidden { display: none !important; }
+
+  .sidebar { width: 260px; background: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
+  .sidebar-brand { padding: 24px 20px; font-size: 1.3rem; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.08); background: linear-gradient(135deg,#4ade80,#f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .sidebar-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; font-weight: 600; font-size: 0.95rem; color: rgba(255,255,255,0.7); transition: all 0.2s; text-decoration: none; }
+  .sidebar-link:hover, .sidebar-link.active { background: rgba(255,255,255,0.06); color: #fff; }
+  .sidebar-link.active { background: var(--sidebar-active); box-shadow: 0 4px 12px rgba(27,131,84,0.35); }
+  .sidebar-icon { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+  .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-footer button { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.8); font-weight: 600; cursor: pointer; }
+  .sidebar-footer button:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+  .main { flex: 1; margin-left: 260px; min-height: 100vh; display: flex; flex-direction: column; }
+  .topbar { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar h1 { font-size: 1.3rem; margin: 0; }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+  .mobile-menu-btn { display: none; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: #fff; color: var(--text); cursor: pointer; font-size: 0.9rem; }
+  .mobile-menu-btn svg { width: 20px; height: 20px; }
+  .topbar-btn { padding: 8px 16px; border-radius: 10px; border: 1px solid var(--border); background: #fff; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: var(--text); }
+  .topbar-btn.primary { background: linear-gradient(135deg,var(--primary),var(--primary-dark)); color: #fff; border-color: transparent; }
+
+  .content { flex: 1; padding: 24px 28px; }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 22px; box-shadow: var(--shadow); margin-bottom: 20px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 0.82rem; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
+  input, textarea, select { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; font: inherit; background: #fff; }
+  textarea { min-height: 80px; resize: vertical; }
+  .save-btn { padding: 12px 24px; border-radius: 12px; border: none; background: linear-gradient(135deg,var(--primary),var(--primary-dark)); color: #fff; font-weight: 700; cursor: pointer; }
+  .save-btn.secondary { background: #f8fafc; color: var(--text); border: 1px solid var(--border); }
+
+  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border); background: #f8fafc; margin-bottom: 10px; }
+  .switch-row input { width: 22px; height: 22px; min-height: 22px; margin: 0; }
+  .switch-row strong { display: block; font-size: 1rem; }
+  .switch-row span { font-size: 0.82rem; color: var(--muted); }
+
+  .category-chip { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--border); background: #fbfdf9; margin-bottom: 8px; }
+  .category-chip button { padding: 5px 10px; border-radius: 8px; border: 1px solid #fecaca; background: #fff1f2; color: var(--danger); font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+
+  .pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 10px; font-size: 0.75rem; font-weight: 700; border: 1px solid var(--border); background: #f8fafc; }
+  .pill.success { background: #ecfdf5; color: var(--success); border-color: #bbf7d0; }
+  .pill.warning { background: #fffbeb; color: var(--warning); border-color: #fde68a; }
+
+  .message { margin: 8px 0 14px; padding: 12px 14px; border-radius: 12px; font-size: 0.92rem; display: none; }
+  .message.show { display: block; }
+  .message.error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  .message.success { background: #ecfdf5; color: #166534; border: 1px solid #bbf7d0; }
+
+  .auth-wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 15% 10%,#dcfce7 0,transparent 35%),radial-gradient(circle at 85% 90%,#fed7aa 0,transparent 35%),linear-gradient(135deg,var(--bg),#eff8ff); z-index: 200; }
+  .auth-card { width: min(90%,420px); background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 32px; box-shadow: var(--shadow); }
+  .auth-card .brand { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; background: linear-gradient(135deg,var(--primary),var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .auth-card input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 14px; background: #fff; color: var(--text); }
+  .auth-card button[type="submit"] { width: 100%; min-height: 48px; border-radius: 12px; border: none; background: linear-gradient(135deg,var(--primary),var(--primary-dark)); color: #fff; font-weight: 700; cursor: pointer; }
+
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; z-index: 1000; display: flex; }
+    .sidebar.show { transform: translateX(0); }
+    .main { margin-left: 0; }
+    .mobile-menu-btn { display: flex; align-items: center; gap: 6px; }
+    .topbar h1 { font-size: 1.1rem; }
+    .form-grid { grid-template-columns: 1fr; }
+    .content { padding: 16px; }
+    .panel { padding: 16px; margin-bottom: 16px; }
+    .switch-row { padding: 12px 14px; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .switch-row input { width: 20px; height: 20px; }
+    .category-chip { padding: 8px 10px; flex-direction: column; align-items: flex-start; gap: 6px; }
+    .category-chip button { width: 100%; padding: 6px; }
+    .save-btn { width: 100%; padding: 14px; }
+    label { font-size: 0.85rem; }
+    input, textarea, select { padding: 12px 14px; font-size: 0.95rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="authView" class="auth-wrap">
+  <div class="auth-card">
+    <div class="brand">Hoppokart</div>
+    <h2 style="margin-bottom:8px;">Admin Login</h2>
+    <p style="color:var(--muted); margin-bottom:18px; font-size:0.92rem;">Store management access ke liye apna admin password enter kijiye.</p>
+    <div id="message" class="message"></div>
+    <form id="authForm">
+      <input id="adminPassword" type="password" placeholder="Enter admin password" required>
+      <button type="submit">Login</button>
+    </form>
+    <p style="margin-top:16px; text-align:center; font-size:0.85rem; color:var(--muted);"><a href="/index.html" style="color:var(--primary); font-weight:600;">Back to website</a></p>
+  </div>
+</div>
+
+<div id="dashboardView" class="hidden" style="display:flex; width:100%;">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Hoppokart</div>
+    <nav class="sidebar-nav">
+      <a href="/admin.html" class="sidebar-link"><span class="sidebar-icon">&#9638;</span>Dashboard</a>
+      <a href="/admin-orders.html" class="sidebar-link"><span class="sidebar-icon">&#128203;</span>Orders</a>
+      <a href="/admin-products.html" class="sidebar-link"><span class="sidebar-icon">&#128230;</span>Products</a>
+      <a href="/admin-store.html" class="sidebar-link active"><span class="sidebar-icon">&#9881;</span>Store Controls</a>
+      <a href="/admin-sales.html" class="sidebar-link"><span class="sidebar-icon">&#128200;</span>Sales Dashboard</a>
+    </nav>
+    <div class="sidebar-footer"><button id="logoutBtn" type="button">Logout</button></div>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div class="mobile-overlay" id="mobileOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999;"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          Menu
+        </button>
+        <h1>Store Controls</h1>
+      </div>
+      <div class="topbar-actions">
+        <a href="/index.html" class="topbar-btn">Open Website</a>
+        <button id="refreshBtn" class="topbar-btn primary">Refresh</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="panel">
+        <h3 style="margin-top:0; margin-bottom:16px;">Store Settings</h3>
+        <div id="storeMessage" class="message"></div>
+        <form id="storeForm">
+          <div class="form-grid">
+            <div class="full">
+              <label>Business Name</label>
+              <input id="sName" type="text" placeholder="Hoppokart">
+            </div>
+            <div class="full">
+              <label>Announcement Banner</label>
+              <textarea id="sAnnounce" placeholder="Special offer, delivery notice..."></textarea>
+            </div>
+            <div class="full">
+              <label>Hero Banner Text</label>
+              <input id="sBannerText" type="text" placeholder="Welcome to Hoppokart - Best products for you!">
+            </div>
+            <div class="full">
+              <label>Custom Video URL</label>
+              <input id="sVideoUrl" type="text" placeholder="YouTube URL or direct video link (optional)">
+            </div>
+          </div>
+          <label class="switch-row">
+            <div><strong>Store Open</strong><span>Customer orders allow karne ke liye</span></div>
+            <input id="sOpen" type="checkbox" checked>
+          </label>
+          <label class="switch-row">
+            <div><strong>Hero Video</strong><span>Homepage featured video section</span></div>
+            <input id="sVideo" type="checkbox" checked>
+          </label>
+        <h4 style="margin-top:20px; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:5px;">WhatsApp Click-to-Chat</h4>
+        <div class="form-grid" style="margin-bottom:10px;">
+          <div class="full">
+            <label>Store WhatsApp Number</label>
+            <input id="wNumber" type="text" placeholder="e.g. 919876543210 (Country code ke sath)">
+          </div>
+        </div>
+        <h4 style="margin-top:20px; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:5px;">Email Notifications (Gmail)</h4>
+        <label class="switch-row">
+          <div><strong>Enable Email Alerts</strong><span>Order aane par email notification bhejein</span></div>
+          <input id="eEnabled" type="checkbox">
+        </label>
+        <div class="form-grid" style="margin-bottom:10px;">
+          <div>
+            <label>Gmail Address</label>
+            <input id="eUser" type="email" placeholder="yourstore@gmail.com">
+          </div>
+          <div>
+            <label>Gmail App Password</label>
+            <input id="ePass" type="password" placeholder="16-digit app password">
+          </div>
+        </div>
+          <div style="margin-top:14px;">
+            <button type="submit" class="save-btn">Save Store Settings</button>
+            <button type="button" id="testEmailBtn" class="save-btn secondary" style="margin-top:8px;">Send Test Email</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin-top:0; margin-bottom:16px;">Offer Coupons</h3>
+        <div id="couponMessage" class="message"></div>
+        <form id="couponForm">
+          <div class="form-grid">
+            <div>
+              <label>Coupon Code</label>
+              <input id="cpCode" type="text" placeholder="SAVE10" required>
+            </div>
+            <div>
+              <label>Discount Type</label>
+              <select id="cpType">
+                <option value="PERCENT">Percentage (%)</option>
+                <option value="FLAT">Flat Amount (Rs)</option>
+              </select>
+            </div>
+            <div>
+              <label>Discount Value</label>
+              <input id="cpValue" type="number" placeholder="10" required>
+            </div>
+            <div>
+              <label>Min Order Amount (Rs)</label>
+              <input id="cpMin" type="number" placeholder="499">
+            </div>
+          </div>
+          <button type="submit" class="save-btn">Create Coupon</button>
+        </form>
+        <div id="couponList" style="margin-top:20px;"></div>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin-top:0; margin-bottom:16px;">Categories</h3>
+        <div id="catMessage" class="message"></div>
+        <form id="catForm" style="display:flex; gap:10px; margin-bottom:16px;">
+          <input id="catName" type="text" placeholder="New category name" style="flex:1;">
+          <button type="submit" class="save-btn">Add</button>
+        </form>
+        <div id="catList"></div>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin-top:0; margin-bottom:16px;">Online Payment Settings</h3>
+        <span id="payBadge" class="pill warning">Disabled</span>
+        <div id="payMessage" class="message"></div>
+        <form id="payForm" style="margin-top:14px;">
+          <div class="form-grid">
+            <div class="full">
+              <label>Business Name</label>
+              <input id="pBizName" type="text" placeholder="Hoppokart">
+            </div>
+            <div class="full">
+              <label>Razorpay Key ID</label>
+              <input id="pKeyId" type="text" placeholder="rzp_test_xxx">
+            </div>
+            <div class="full">
+              <label>Razorpay Key Secret</label>
+              <input id="pKeySecret" type="password" placeholder="rzp_test_secret_xxx">
+            </div>
+          </div>
+          <div style="margin-top:14px;">
+            <button type="submit" class="save-btn">Save Payment Settings</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin-top:0; margin-bottom:16px;">Change Admin Password</h3>
+        <div id="pwdMessage" class="message"></div>
+        <form id="pwdForm">
+          <div class="form-grid">
+            <div>
+              <label>Current Password</label>
+              <input id="oldPwd" type="password" placeholder="Purana password dalein" required>
+            </div>
+            <div>
+              <label>New Password</label>
+              <input id="newPwd" type="password" placeholder="Naya password (min 4 chars)" required>
+            </div>
+          </div>
+          <div style="margin-top:14px;">
+            <button type="submit" class="save-btn">Update Password</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel" style="border-color: var(--danger);">
+        <h3 style="margin-top:0; color: var(--danger);">Security Controls</h3>
+        <p style="font-size: 0.85rem; color: var(--muted);">Agar aapko lagta hai ki kisi aur ke pas login hai, toh yahan se sabhi devices ko logout kar sakte hain.</p>
+        <div id="logoutAllMessage" class="message"></div>
+        <div style="margin-top:14px;">
+          <button type="button" id="logoutAllBtn" class="save-btn" style="background: var(--danger);">Logout From All Devices</button>
+        </div>
+      </div>
+  </div>
+
+<script>
+const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
+const apiUrl = (path) => (API_BASE ? API_BASE + path : path);
+const SESSION_KEY_KEY = 'admin_session_key';
+
+function getSessionKey() {
+  return sessionStorage.getItem(SESSION_KEY_KEY);
+}
+
+function setSessionKey(key) {
+  sessionStorage.setItem(SESSION_KEY_KEY, key);
+}
+
+function clearSessionKey() { sessionStorage.removeItem(SESSION_KEY_KEY); }
+
+function clearLegacyLocalStorageSession() {
+  try { localStorage.removeItem(SESSION_KEY_KEY); } catch (err) { /* ignore */ }
+}
+
+function shouldResetSessionForCurrentEntry() {
+  const ref = document.referrer || '';
+  return ref && !ref.includes('/admin');
+}
+
+function showMsg(el, text, type) { el.textContent = text; el.className = `message show ${type}`; }
+function clearMsg(el) { el.className = 'message'; el.textContent = ''; }
+
+async function apiFetch(path, opts = {}) {
+  opts.cache = 'no-cache';
+  const sessionKey = getSessionKey();
+  if (sessionKey) {
+    opts.headers = {
+      ...opts.headers,
+      'X-Admin-Session': sessionKey
+    };
+  }
+  const res = await fetch(apiUrl(path), opts);
+  if (res.status === 401) {
+    clearSessionKey();
+    location.reload();
+    throw new Error('Unauthorized');
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.success === false) throw new Error(data.message || 'Request failed');
+  return data;
+}
+
+async function loadStore() {
+  const data = await apiFetch('/api/store/config');
+  const c = data.config || {};
+  document.getElementById('sName').value = c.businessName || '';
+  document.getElementById('sAnnounce').value = c.announcement || '';
+  document.getElementById('sBannerText').value = c.heroBannerText || '';
+  document.getElementById('sVideoUrl').value = c.customVideoUrl || '';
+  document.getElementById('sOpen').checked = c.storeOpen !== false;
+  document.getElementById('sVideo').checked = c.heroVideoEnabled !== false;
+
+  if(document.getElementById('wNumber')) document.getElementById('wNumber').value = c.storeWhatsappNumber || '';
+
+  if(document.getElementById('eEnabled')) document.getElementById('eEnabled').checked = c.emailEnabled === true;
+  if(document.getElementById('eUser')) document.getElementById('eUser').value = c.emailUser || '';
+  if(document.getElementById('ePass')) document.getElementById('ePass').value = c.emailPass || '';
+}
+
+async function loadPayment() {
+  const data = await apiFetch('/api/payment/config');
+  document.getElementById('pKeyId').value = data.keyId || '';
+  document.getElementById('pBizName').value = data.businessName || '';
+  const badge = document.getElementById('payBadge');
+  badge.textContent = data.enabled ? 'Enabled' : 'Disabled';
+  badge.className = `pill ${data.enabled ? 'success' : 'warning'}`;
+}
+
+async function loadCategories() {
+  const data = await apiFetch('/api/categories');
+  const list = document.getElementById('catList');
+  const categories = data.categories || [];
+  if (!categories.length) { list.innerHTML = '<div style="color:var(--muted); padding:20px; text-align:center;">No categories yet.</div>'; return; }
+  list.innerHTML = categories.map(c => `
+    <div class="category-chip">
+      <span>${c}</span>
+      <button onclick="deleteCategory('${encodeURIComponent(c)}')">Delete</button>
+    </div>
+  `).join('');
+}
+
+async function deleteCategory(name) {
+  if (!confirm(`Delete category "${decodeURIComponent(name)}"?`)) return;
+  try {
+    await apiFetch(`/api/categories/${name}`, { method: 'DELETE' });
+    await loadCategories();
+    showMsg(document.getElementById('catMessage'), 'Category deleted', 'success');
+  } catch (err) {
+    showMsg(document.getElementById('catMessage'), err.message, 'error');
+  }
+}
+
+document.getElementById('storeForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearMsg(document.getElementById('storeMessage'));
+  try {
+    await apiFetch('/api/store/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        businessName: document.getElementById('sName').value.trim(),
+        announcement: document.getElementById('sAnnounce').value.trim(),
+        heroBannerText: document.getElementById('sBannerText').value.trim(),
+        customVideoUrl: document.getElementById('sVideoUrl').value.trim(),
+        storeOpen: document.getElementById('sOpen').checked,
+        heroVideoEnabled: document.getElementById('sVideo').checked,
+        storeWhatsappNumber: document.getElementById('wNumber').value.trim(),
+        emailEnabled: document.getElementById('eEnabled').checked,
+        emailUser: document.getElementById('eUser').value.trim(),
+        emailPass: document.getElementById('ePass').value.trim()
+      })
+    });
+    showMsg(document.getElementById('storeMessage'), 'Store settings saved', 'success');
+  } catch (err) { showMsg(document.getElementById('storeMessage'), err.message, 'error'); }
+});
+
+document.getElementById('testEmailBtn')?.addEventListener('click', async () => {
+  const msgEl = document.getElementById('storeMessage');
+  clearMsg(msgEl);
+  const btn = document.getElementById('testEmailBtn');
+  btn.textContent = 'Sending...';
+  
+  try {
+    const data = await apiFetch('/api/admin/test-email', { method: 'POST' });
+    showMsg(msgEl, data.message || 'Test email triggered! Check your inbox.', 'success');
+  } catch (err) {
+    showMsg(msgEl, 'Error: ' + err.message, 'error');
+  } finally {
+    btn.textContent = 'Send Test Email';
+  }
+});
+
+document.getElementById('payForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearMsg(document.getElementById('payMessage'));
+  try {
+    await apiFetch('/api/payment/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        keyId: document.getElementById('pKeyId').value.trim(),
+        keySecret: document.getElementById('pKeySecret').value.trim(),
+        businessName: document.getElementById('pBizName').value.trim()
+      })
+    });
+    document.getElementById('pKeySecret').value = '';
+    await loadPayment();
+    showMsg(document.getElementById('payMessage'), 'Payment settings saved', 'success');
+  } catch (err) { showMsg(document.getElementById('payMessage'), err.message, 'error'); }
+});
+
+document.getElementById('catForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearMsg(document.getElementById('catMessage'));
+  const name = document.getElementById('catName').value.trim();
+  if (!name) { showMsg(document.getElementById('catMessage'), 'Category name required', 'error'); return; }
+  try {
+    await apiFetch('/api/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    document.getElementById('catName').value = '';
+    await loadCategories();
+    showMsg(document.getElementById('catMessage'), 'Category added', 'success');
+  } catch (err) { showMsg(document.getElementById('catMessage'), err.message, 'error'); }
+});
+
+document.getElementById('pwdForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msgEl = document.getElementById('pwdMessage');
+  clearMsg(msgEl);
+  try {
+    await apiFetch('/api/admin/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        oldPassword: document.getElementById('oldPwd').value,
+        newPassword: document.getElementById('newPwd').value
+      })
+    });
+    
+    // Password change hone ke baad logout kar dein
+    alert('Password successfully change ho gaya! Ab aapko naye password se login karna hoga.');
+    clearSessionKey();
+    location.reload();
+  } catch (err) { 
+    showMsg(msgEl, err.message, 'error'); 
+  }
+});
+
+document.getElementById('logoutAllBtn').addEventListener('click', async () => {
+  if (!confirm('Kya aap sach mein sabhi devices se logout karna chahte hain? Aapko fir se login karna padega.')) return;
+  
+  const msgEl = document.getElementById('logoutAllMessage');
+  clearMsg(msgEl);
+  
+  try {
+    await apiFetch('/api/admin/logout-all', { method: 'POST' });
+    alert('Sabhi devices se logout ho gaya!');
+    clearSessionKey();
+    location.reload();
+  } catch (err) {
+    showMsg(msgEl, err.message, 'error');
+  }
+});
+
+document.getElementById('authForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const data = await apiFetch('/api/admin/login', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ password: document.getElementById('adminPassword').value }) 
+    });
+    setSessionKey(data.sessionKey);
+    document.getElementById('authView').classList.add('hidden');
+    document.getElementById('dashboardView').classList.remove('hidden');
+    await Promise.all([loadStore(), loadPayment(), loadCategories(), loadCoupons()]);
+  } catch (err) { showMsg(document.getElementById('message'), err.message || 'Login failed', 'error'); }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', () => { clearSessionKey(); location.reload(); });
+document.getElementById('refreshBtn').addEventListener('click', () => { loadStore(); loadPayment(); loadCategories(); });
+
+async function loadCoupons() {
+  const data = await apiFetch('/api/coupons');
+  const list = document.getElementById('couponList');
+  const coupons = data.coupons || [];
+  if (!coupons.length) { list.innerHTML = '<p style="color:var(--muted); text-align:center;">No coupons active.</p>'; return; }
+  list.innerHTML = coupons.map(c => `
+    <div class="category-chip">
+      <div><strong>${c.code}</strong> — ${c.type === 'PERCENT' ? c.value + '%' : 'Rs ' + c.value} off (Min: Rs ${c.minOrder})</div>
+      <button onclick="deleteCoupon('${c.code}')" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca;">Delete</button>
+    </div>
+  `).join('');
+}
+
+async function deleteCoupon(code) {
+  if (!confirm(`Delete coupon ${code}?`)) return;
+  try {
+    await apiFetch(`/api/coupons/${code}`, { method: 'DELETE' });
+    loadCoupons();
+  } catch (err) { alert(err.message); }
+}
+
+document.getElementById('couponForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('couponMessage');
+  clearMsg(msg);
+  try {
+    await apiFetch('/api/coupons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: document.getElementById('cpCode').value,
+        type: document.getElementById('cpType').value,
+        value: document.getElementById('cpValue').value,
+        minOrder: document.getElementById('cpMin').value
+      })
+    });
+    document.getElementById('couponForm').reset();
+    loadCoupons();
+    showMsg(msg, 'Coupon created!', 'success');
+  } catch (err) { showMsg(msg, err.message, 'error'); }
+});
+
+// Mobile menu functionality
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const mobileOverlay = document.getElementById('mobileOverlay');
+const sidebar = document.querySelector('.sidebar');
+if (mobileMenuBtn && mobileOverlay && sidebar) {
+  mobileMenuBtn.addEventListener('click', () => { sidebar.classList.add('show'); mobileOverlay.style.display = 'block'; });
+  mobileOverlay.addEventListener('click', () => { sidebar.classList.remove('show'); mobileOverlay.style.display = 'none'; });
+  sidebar.addEventListener('click', (e) => { if (e.target.classList.contains('sidebar-link')) { sidebar.classList.remove('show'); mobileOverlay.style.display = 'none'; } });
+}
+
+async function checkAuthOnLoad() {
+  clearLegacyLocalStorageSession();
+  if (shouldResetSessionForCurrentEntry()) clearSessionKey();
+  const sessionKey = getSessionKey();
+  if (sessionKey) {
+    try {
+      const response = await apiFetch('/api/admin/check-session');
+      if (response.success) {
+        document.getElementById('authView').classList.add('hidden');
+        document.getElementById('dashboardView').classList.remove('hidden');
+        Promise.all([loadStore(), loadPayment(), loadCategories()]);
+      } else {
+        clearSessionKey();
+      }
+    } catch (err) { clearSessionKey(); }
+  }
+}
+checkAuthOnLoad();
+</script>
+</body>
+</html>

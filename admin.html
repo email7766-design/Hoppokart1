@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoppokart | Admin Dashboard</title>
+
+<!-- Admin pages should usually not be indexed by search engines -->
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="favicon.png">
+
+<link rel="preload" href="/fonts/inter.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="/fonts/inter.css" rel="stylesheet"></noscript>
+<style>
+  :root {
+    --primary: #1b8354;
+    --primary-dark: #116640;
+    --accent: #f97316;
+    --bg: #f4f8ef;
+    --card: #ffffff;
+    --text: #152018;
+    --muted: #4a5c4b;
+    --border: #d8e2d1;
+    --shadow: 0 10px 30px rgba(21, 32, 24, 0.08);
+    --danger: #dc2626;
+    --warning: #b45309;
+    --success: #166534;
+    --sidebar-bg: #152018;
+    --sidebar-text: #e8f5e9;
+    --sidebar-active: #1b8354;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Inter", system-ui, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+  }
+
+  h1, h2, h3, p { margin-top: 0; }
+  button, input, textarea, select { font: inherit; }
+  a { text-decoration: none; color: inherit; }
+
+  .hidden { display: none !important; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 260px;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .sidebar-brand {
+    padding: 24px 20px;
+    font-size: 1.3rem;
+    font-weight: 800;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: linear-gradient(135deg, #4ade80, #f97316);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .sidebar-nav {
+    flex: 1;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    color: rgba(255,255,255,0.7);
+  }
+  .sidebar-link:hover, .sidebar-link.active {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+  }
+  .sidebar-link.active {
+    background: var(--sidebar-active);
+    box-shadow: 0 4px 12px rgba(27,131,84,0.35);
+  }
+  .sidebar-icon {
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .sidebar-footer button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: transparent;
+    color: rgba(255,255,255,0.8);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .sidebar-footer button:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+  }
+
+  /* Main */
+  .main {
+    flex: 1;
+    margin-left: 260px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar h1 { font-size: 1.3rem; margin: 0; }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+  .mobile-menu-btn {
+    display: none;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .mobile-menu-btn svg { width: 20px; height: 20px; }
+  .topbar-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    color: var(--text);
+  }
+  .topbar-btn.primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff;
+    border-color: transparent;
+  }
+
+  .content {
+    flex: 1;
+    padding: 24px 28px;
+  }
+
+  /* Auth */
+  .auth-wrap {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(circle at 15% 10%, #dcfce7 0, transparent 35%),
+      radial-gradient(circle at 85% 90%, #fed7aa 0, transparent 35%),
+      linear-gradient(135deg, var(--bg), #eff8ff);
+    z-index: 200;
+  }
+  .auth-card {
+    width: min(90%, 420px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: var(--shadow);
+  }
+  .auth-card .brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .auth-card input {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 14px;
+    background: #fff;
+    color: var(--text);
+  }
+  .auth-card button[type="submit"] {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .message {
+    margin: 8px 0 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    display: none;
+  }
+  .message.show { display: block; }
+  .message.error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  .message.success { background: #ecfdf5; color: #166534; border: 1px solid #bbf7d0; }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+  }
+  .stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: var(--primary);
+  }
+  .stat-card:nth-child(2) .stat-value { color: var(--accent); }
+  .stat-card:nth-child(3) .stat-value { color: #8b5cf6; }
+  .stat-card:nth-child(4) .stat-value { color: var(--success); }
+
+  .stat-card .stat-label {
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .stat-card .stat-change {
+    margin-top: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--success);
+  }
+
+  /* Panels */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .panel-head h3 { margin: 0; font-size: 1.1rem; }
+  .panel-head a {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  th, td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    font-weight: 700;
+    color: var(--muted);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  tr:last-child td { border-bottom: none; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    background: #f8fafc;
+    color: var(--text);
+  }
+  .pill.success { background: #ecfdf5; color: var(--success); border-color: #bbf7d0; }
+  .pill.warning { background: #fffbeb; color: var(--warning); border-color: #fde68a; }
+  .pill.danger { background: #fff1f2; color: var(--danger); border-color: #fecaca; }
+  .pill.info { background: #e0f2fe; color: #035388; border-color: #7dd3fc; }
+
+  .empty-state {
+    padding: 30px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  /* Quick links grid */
+  .quick-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .quick-card {
+    background: linear-gradient(135deg, #f0fdf4, #fff);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .quick-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+  }
+  .quick-card .icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+  }
+  .quick-card h4 { margin: 0; font-size: 1rem; }
+  .quick-card p { margin: 0; color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+
+  @media (max-width: 1100px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .quick-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+    .sidebar.show {
+      transform: translateX(0);
+    }
+    .main { margin-left: 0; }
+    body { flex-direction: column; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .quick-grid { grid-template-columns: 1fr; }
+    .topbar-actions { gap: 8px; }
+    .mobile-menu-btn { display: flex; align-items: center; gap: 6px; }
+    .topbar h1 { font-size: 1.1rem; }
+    .content { padding: 16px; }
+    .panel { padding: 16px; margin-bottom: 16px; }
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { font-size: 0.85rem; }
+    th, td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Auth Overlay -->
+<div id="authView" class="auth-wrap">
+  <div class="auth-card">
+    <div class="brand">Hoppokart</div>
+    <h2 style="margin-bottom:8px;">Admin Login</h2>
+    <p style="color:var(--muted); margin-bottom:18px; font-size:0.92rem;">Store management access ke liye apna admin password enter kijiye.</p>
+    <div id="message" class="message"></div>
+    <form id="authForm">
+      <input id="adminPassword" type="password" placeholder="Enter admin password" required>
+      <button type="submit">Login</button>
+    </form>
+    <p style="margin-top:16px; text-align:center; font-size:0.85rem; color:var(--muted);">
+      <a href="/index.html" style="color:var(--primary); font-weight:600;">Back to website</a>
+    </p>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboardView" class="hidden" style="display:flex; width:100%;">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Hoppokart</div>
+    <nav class="sidebar-nav">
+      <a href="/admin.html" class="sidebar-link active">
+        <span class="sidebar-icon">&#9638;</span>
+        Dashboard
+      </a>
+      <a href="/admin-orders.html" class="sidebar-link">
+        <span class="sidebar-icon">&#128203;</span>
+        Orders
+      </a>
+      <a href="/admin-products.html" class="sidebar-link">
+        <span class="sidebar-icon">&#128230;</span>
+        Products
+      </a>
+      <a href="/admin-store.html" class="sidebar-link">
+        <span class="sidebar-icon">&#9881;</span>
+        Store Controls
+      </a>
+      <a href="/admin-sales.html" class="sidebar-link">
+        <span class="sidebar-icon">&#128200;</span>
+        Sales Dashboard
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="logoutBtn" type="button">Logout</button>
+    </div>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div class="mobile-overlay" id="mobileOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999;"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+          Menu
+        </button>
+        <h1>Dashboard</h1>
+      </div>
+      <div class="topbar-actions">
+        <a href="/index.html" class="topbar-btn">Open Website</a>
+        <button id="refreshBtn" class="topbar-btn primary">Refresh Data</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statOrders">0</div>
+          <div class="stat-label">Total Orders</div>
+          <div class="stat-change">Lifetime</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statRevenue">Rs 0</div>
+          <div class="stat-label">Total Revenue</div>
+          <div class="stat-change">Lifetime</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statProducts">0</div>
+          <div class="stat-label">Products</div>
+          <div class="stat-change">In catalog</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statStore">Open</div>
+          <div class="stat-label">Store Status</div>
+          <div class="stat-change" id="statStoreSub">Accepting orders</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Recent Orders</h3>
+          <a href="/admin-orders.html">View All &rarr;</a>
+        </div>
+        <div class="table-wrap">
+          <table id="recentOrdersTable">
+            <thead>
+              <tr><th>Order Ref</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+            </thead>
+            <tbody id="recentOrdersBody">
+              <tr><td colspan="5" class="empty-state">Loading orders...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Quick Actions</h3>
+        </div>
+        <div class="quick-grid">
+          <a href="/admin-orders.html" class="quick-card">
+            <div class="icon">&#128203;</div>
+            <h4>Manage Orders</h4>
+            <p>Orders ko filter, search aur status update karo. Sab order details ek jagah.</p>
+          </a>
+          <a href="/admin-products.html" class="quick-card">
+            <div class="icon">&#128230;</div>
+            <h4>Manage Products</h4>
+            <p>Naye products add karo, images upload karo, existing products edit ya delete karo.</p>
+          </a>
+          <a href="/admin-store.html" class="quick-card">
+            <div class="icon">&#9881;</div>
+            <h4>Store Settings</h4>
+            <p>Store open/close, announcement aur payment settings manage karo.</p>
+          </a>
+          <a href="/admin-sales.html" class="quick-card">
+            <div class="icon">&#128200;</div>
+            <h4>Sales Analytics</h4>
+            <p>Revenue trends, order breakdown, top products aur payment mode analysis dekho.</p>
+          </a>
+          <a href="/index.html" class="quick-card">
+            <div class="icon">&#127760;</div>
+            <h4>View Website</h4>
+            <p>Apni live website ko dekho jaise customer dekhta hai.</p>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
+  const apiUrl = (path) => (API_BASE ? API_BASE + path : path);
+  const SESSION_KEY_KEY = 'admin_session_key';
+  
+  const authView = document.getElementById('authView');
+  const dashboardView = document.getElementById('dashboardView');
+  const message = document.getElementById('message');
+  const authForm = document.getElementById('authForm');
+  const adminPassword = document.getElementById('adminPassword');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const refreshBtn = document.getElementById('refreshBtn');
+
+  function getSessionKey() {
+    return sessionStorage.getItem(SESSION_KEY_KEY);
+  }
+
+  function setSessionKey(key) {
+    sessionStorage.setItem(SESSION_KEY_KEY, key);
+  }
+
+  function clearSessionKey() {
+    sessionStorage.removeItem(SESSION_KEY_KEY);
+  }
+
+  function clearLegacyLocalStorageSession() {
+    try { localStorage.removeItem(SESSION_KEY_KEY); } catch (err) { /* ignore */ }
+  }
+
+  function shouldResetSessionForCurrentEntry() {
+    const ref = document.referrer || '';
+    return ref && !ref.includes('/admin');
+  }
+
+  function showMsg(text, type) {
+    message.textContent = text;
+    message.className = `message show ${type}`;
+  }
+
+  async function apiFetch(path, opts = {}) {
+    opts.cache = 'no-cache';
+    const sessionKey = getSessionKey();
+    if (sessionKey) {
+      opts.headers = {
+        ...opts.headers,
+        'X-Admin-Session': sessionKey // Add session key to headers
+      };
+    }
+    const res = await fetch(apiUrl(path), opts);
+    // If 401, redirect to login
+    if (res.status === 401) {
+      clearSessionKey();
+      location.reload(); // Force re-authentication
+      throw new Error('Unauthorized: Session expired or invalid.');
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.success === false) throw new Error(data.message || 'Request failed');
+    return data;
+  }
+
+  async function loadDashboard() {
+    try {
+      const productsData = await apiFetch('/api/products').catch(() => ({ products: [] }));
+      const ordersData = await apiFetch('/api/orders').catch(() => ({ orders: [] }));
+      const configData = await apiFetch('/api/store/config').catch(() => ({ config: {} }));
+      const analyticsData = await apiFetch('/api/admin/analytics').catch(() => ({ analytics: {} }));
+
+      const analytics = analyticsData.analytics || {};
+      const products = productsData.products || [];
+      const orders = ordersData.orders || [];
+      const config = configData.config || {};
+
+      document.getElementById('statOrders').textContent = String(analytics.totalOrders || 0);
+      document.getElementById('statRevenue').textContent = 'Rs ' + Number(analytics.totalRevenue || 0).toLocaleString('en-IN');
+      document.getElementById('statProducts').textContent = String(products.length || 0);
+      document.getElementById('statStore').textContent = (config.storeOpen !== false) ? 'Open' : 'Closed';
+      document.getElementById('statStoreSub').textContent = (config.storeOpen !== false) ? 'Accepting orders' : 'Store paused';
+
+      const tbody = document.getElementById('recentOrdersBody');
+      const recent = orders.slice(0, 5);
+      if (!recent.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No orders yet</td></tr>';
+      } else {
+        tbody.innerHTML = recent.map(o => {
+          const st = String(o.status || 'created').toLowerCase();
+          const pillClass = st === 'paid' || st === 'delivered' ? 'success' : st === 'cancelled' ? 'danger' : 'warning';
+          return `<tr>
+            <td><strong>${o.orderRef || o.id || 'N/A'}</strong></td>
+            <td>${o.customer?.name || 'N/A'}<br><span style="color:var(--muted);font-size:0.82rem;">${o.customer?.phone || ''}</span></td>
+            <td>Rs ${Number(o.totalAmount || 0).toLocaleString('en-IN')}</td>
+            <td><span class="pill ${pillClass}">${st.toUpperCase()}</span></td>
+            <td style="color:var(--muted);font-size:0.85rem;">${new Date(o.createdAt || Date.now()).toLocaleDateString('en-IN')}</td>
+          </tr>`;
+        }).join('');
+      }
+    } catch (err) {
+      console.error("Dashboard load failed:", err);
+      alert("Dashboard data load nahi ho paya. Server check karein.");
+    }
+  }
+
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const response = await apiFetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: adminPassword.value })
+      });
+      setSessionKey(response.sessionKey); // Store the session key
+      authView.classList.add('hidden');
+      dashboardView.classList.remove('hidden');
+      await loadDashboard();
+    } catch (err) {
+      showMsg(err.message || 'Login failed', 'error');
+    }
+  });
+
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      await apiFetch('/api/admin/logout-all', { method: 'POST' }); // Invalidate server-side session
+    } catch (err) {
+      console.error("Logout failed on server:", err);
+    } finally {
+      clearSessionKey(); // Clear client-side session
+      location.reload(); // Reload to show login form
+    }
+  });
+
+  refreshBtn.addEventListener('click', async () => {
+    refreshBtn.textContent = 'Refreshing...';
+    await loadDashboard();
+    refreshBtn.textContent = 'Refresh Data';
+  });
+
+  // Initial check for authentication on page load
+  async function checkAuthOnLoad() {
+    clearLegacyLocalStorageSession();
+    if (shouldResetSessionForCurrentEntry()) clearSessionKey();
+    const sessionKey = getSessionKey();
+    if (sessionKey) {
+      try {
+        const response = await apiFetch('/api/admin/check-session');
+        if (response.success) {
+          authView.classList.add('hidden');
+          dashboardView.classList.remove('hidden');
+          await loadDashboard();
+        } else {
+          clearSessionKey(); // Invalid session key, clear it
+          authView.classList.remove('hidden');
+          dashboardView.classList.add('hidden');
+          showMsg('Session expired or invalid. Please log in again.', 'error');
+        }
+      } catch (err) {
+        console.error("Session check failed:", err);
+        clearSessionKey();
+        authView.classList.remove('hidden');
+        dashboardView.classList.add('hidden');
+        showMsg('Could not verify session. Please log in.', 'error');
+      }
+    } else {
+      authView.classList.remove('hidden');
+      dashboardView.classList.add('hidden');
+    }
+  }
+
+  // Mobile menu functionality
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const mobileOverlay = document.getElementById('mobileOverlay');
+  const sidebar = document.querySelector('.sidebar');
+
+  if (mobileMenuBtn && mobileOverlay && sidebar) {
+    mobileMenuBtn.addEventListener('click', () => {
+      sidebar.classList.add('show');
+      mobileOverlay.style.display = 'block';
+    });
+
+    mobileOverlay.addEventListener('click', () => {
+      sidebar.classList.remove('show');
+      mobileOverlay.style.display = 'none';
+    });
+
+    // Close sidebar when clicking a link on mobile
+    sidebar.addEventListener('click', (e) => {
+      if (e.target.classList.contains('sidebar-link')) {
+        sidebar.classList.remove('show');
+        mobileOverlay.style.display = 'none';
+      }
+    });
+  }
+
+  checkAuthOnLoad(); // Call the new function on load
+</script>
+</body>
+</html>

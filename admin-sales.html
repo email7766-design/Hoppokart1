@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoppokart | Sales Dashboard</title>
+<link rel="preload" href="/fonts/inter.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="/fonts/inter.css" rel="stylesheet"></noscript>
+<script src="/js/chart.umd.min.js"></script>
+<style>
+  :root {
+    --primary: #1b8354; --primary-dark: #116640; --accent: #f97316;
+    --bg: #f4f8ef; --card: #ffffff; --text: #152018; --muted: #4a5c4b;
+    --border: #d8e2d1; --shadow: 0 10px 30px rgba(21,32,24,0.08);
+    --danger: #dc2626; --warning: #b45309; --success: #166534;
+    --sidebar-bg: #152018; --sidebar-text: #e8f5e9; --sidebar-active: #1b8354;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: "Inter",system-ui,sans-serif; color: var(--text); background: var(--bg); display: flex; }
+  .hidden { display: none !important; }
+
+  .sidebar { width: 260px; background: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
+  .sidebar-brand { padding: 24px 20px; font-size: 1.3rem; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.08); background: linear-gradient(135deg,#4ade80,#f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .sidebar-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; font-weight: 600; font-size: 0.95rem; color: rgba(255,255,255,0.7); transition: all 0.2s; text-decoration: none; }
+  .sidebar-link:hover, .sidebar-link.active { background: rgba(255,255,255,0.06); color: #fff; }
+  .sidebar-link.active { background: var(--sidebar-active); box-shadow: 0 4px 12px rgba(27,131,84,0.35); }
+  .sidebar-icon { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+  .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-footer button { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.8); font-weight: 600; cursor: pointer; }
+  .sidebar-footer button:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+  .main { flex: 1; margin-left: 260px; min-height: 100vh; display: flex; flex-direction: column; }
+  .topbar { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar h1 { font-size: 1.3rem; margin: 0; }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+  .mobile-menu-btn { display: none; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: #fff; color: var(--text); cursor: pointer; font-size: 0.9rem; }
+  .mobile-menu-btn svg { width: 20px; height: 20px; }
+  .topbar-btn { padding: 8px 16px; border-radius: 10px; border: 1px solid var(--border); background: #fff; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: var(--text); }
+  .topbar-btn.primary { background: linear-gradient(135deg,var(--primary),var(--primary-dark)); color: #fff; border-color: transparent; }
+
+  .content { flex: 1; padding: 24px 28px; }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 22px; box-shadow: var(--shadow); margin-bottom: 20px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 24px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 22px; box-shadow: var(--shadow); }
+  .stat-card .value { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; background: linear-gradient(135deg,var(--primary),var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .stat-card .label { color: var(--muted); font-size: 0.9rem; font-weight: 500; }
+
+  .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .chart-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 22px; box-shadow: var(--shadow); }
+  .chart-box h3 { margin: 0 0 16px; font-size: 1rem; }
+  .chart-container { position: relative; height: 320px; width: 100%; }
+
+  .top-products { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 22px; box-shadow: var(--shadow); }
+  .top-products h3 { margin: 0 0 16px; font-size: 1rem; }
+  .product-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .product-bar .name { flex: 1; font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .product-bar .bar-wrap { width: 120px; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+  .product-bar .bar { height: 100%; background: linear-gradient(90deg,var(--primary),var(--accent)); border-radius: 4px; }
+  .product-bar .count { font-size: 0.85rem; font-weight: 700; color: var(--muted); min-width: 30px; text-align: right; }
+
+  .empty-state { padding: 40px; text-align: center; color: var(--muted); }
+
+  .message { margin: 8px 0 14px; padding: 12px 14px; border-radius: 12px; font-size: 0.92rem; display: none; }
+  .message.show { display: block; }
+  .message.error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+  .auth-wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 15% 10%,#dcfce7 0,transparent 35%),radial-gradient(circle at 85% 90%,#fed7aa 0,transparent 35%),linear-gradient(135deg,var(--bg),#eff8ff); z-index: 200; }
+  .auth-card { width: min(90%,420px); background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 32px; box-shadow: var(--shadow); }
+  .auth-card .brand { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; background: linear-gradient(135deg,var(--primary),var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .auth-card input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 14px; background: #fff; color: var(--text); }
+  .auth-card button[type="submit"] { width: 100%; min-height: 48px; border-radius: 12px; border: none; background: linear-gradient(135deg,var(--primary),var(--primary-dark)); color: #fff; font-weight: 700; cursor: pointer; }
+
+  @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .charts-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 768px) { .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; z-index: 1000; display: flex; } .sidebar.show { transform: translateX(0); } .main { margin-left: 0; } .stats-grid { grid-template-columns: 1fr; } .mobile-menu-btn { display: flex; align-items: center; gap: 6px; } .topbar h1 { font-size: 1.1rem; } .content { padding: 16px; } .panel { padding: 16px; margin-bottom: 16px; } }
+</style>
+</head>
+<body>
+
+<div id="authView" class="auth-wrap">
+  <div class="auth-card">
+    <div class="brand">Hoppokart</div>
+    <h2 style="margin-bottom:8px;">Admin Login</h2>
+    <p style="color:var(--muted); margin-bottom:18px; font-size:0.92rem;">Store management access ke liye apna admin password enter kijiye.</p>
+    <div id="message" class="message"></div>
+    <form id="authForm">
+      <input id="adminPassword" type="password" placeholder="Enter admin password" required>
+      <button type="submit">Login</button>
+    </form>
+    <p style="margin-top:16px; text-align:center; font-size:0.85rem; color:var(--muted);"><a href="/index.html" style="color:var(--primary); font-weight:600;">Back to website</a></p>
+  </div>
+</div>
+
+<div id="dashboardView" class="hidden" style="display:flex; width:100%;">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Hoppokart</div>
+    <nav class="sidebar-nav">
+      <a href="/admin.html" class="sidebar-link"><span class="sidebar-icon">&#9638;</span>Dashboard</a>
+      <a href="/admin-orders.html" class="sidebar-link"><span class="sidebar-icon">&#128203;</span>Orders</a>
+      <a href="/admin-products.html" class="sidebar-link"><span class="sidebar-icon">&#128230;</span>Products</a>
+      <a href="/admin-store.html" class="sidebar-link"><span class="sidebar-icon">&#9881;</span>Store Controls</a>
+      <a href="/admin-sales.html" class="sidebar-link active"><span class="sidebar-icon">&#128200;</span>Sales Dashboard</a>
+    </nav>
+    <div class="sidebar-footer"><button id="logoutBtn" type="button">Logout</button></div>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div class="mobile-overlay" id="mobileOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999;"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          Menu
+        </button>
+        <h1>Sales Dashboard</h1>
+      </div>
+      <div class="topbar-actions">
+        <a href="/index.html" class="topbar-btn">Open Website</a>
+        <button id="refreshBtn" class="topbar-btn primary">Refresh</button>
+      </div>
+    </div>
+    <div class="content">
+      <div id="salesMessage" class="message"></div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label"><span>&#128203;</span> Total Orders</div>
+          <div class="value" id="sTotalOrders">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label"><span>&#128176;</span> Total Revenue</div>
+          <div class="value" id="sTotalRevenue">Rs 0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label"><span>&#9989;</span> Online Paid</div>
+          <div class="value" id="sPaidOrders">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label"><span>&#128666;</span> COD Orders</div>
+          <div class="value" id="sCodOrders">0</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-box">
+          <h3>Revenue Trend (Last 30 Days)</h3>
+          <div class="chart-container">
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-box">
+          <h3>Order Status Breakdown</h3>
+          <div class="chart-container">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-box">
+          <h3>Payment Mode Distribution</h3>
+          <div class="chart-container">
+            <canvas id="paymentChart"></canvas>
+          </div>
+        </div>
+        <div class="top-products">
+          <h3>Top Selling Products</h3>
+          <div id="topProductsList"><div class="empty-state">Loading...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
+const apiUrl = (path) => (API_BASE ? API_BASE + path : path);
+const SESSION_KEY_KEY = 'admin_session_key';
+
+function getSessionKey() {
+  return sessionStorage.getItem(SESSION_KEY_KEY);
+}
+
+function setSessionKey(key) {
+  sessionStorage.setItem(SESSION_KEY_KEY, key);
+}
+
+function clearSessionKey() { sessionStorage.removeItem(SESSION_KEY_KEY); }
+
+function clearLegacyLocalStorageSession() {
+  try { localStorage.removeItem(SESSION_KEY_KEY); } catch (err) { /* ignore */ }
+}
+
+function shouldResetSessionForCurrentEntry() {
+  const ref = document.referrer || '';
+  return ref && !ref.includes('/admin');
+}
+
+function showMsg(el, text, type) { el.textContent = text; el.className = `message show ${type}`; }
+
+async function apiFetch(path, opts = {}) {
+  opts.cache = 'no-cache';
+  const sessionKey = getSessionKey();
+  if (sessionKey) {
+    opts.headers = {
+      ...opts.headers,
+      'X-Admin-Session': sessionKey
+    };
+  }
+  const res = await fetch(apiUrl(path), opts);
+  if (res.status === 401) {
+    clearSessionKey();
+    location.reload();
+    throw new Error('Unauthorized');
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.success === false) throw new Error(data.message || 'Request failed');
+  return data;
+}
+
+let revenueChart, statusChart, paymentChart;
+
+function destroyCharts() {
+  if (revenueChart) revenueChart.destroy();
+  if (statusChart) statusChart.destroy();
+  if (paymentChart) paymentChart.destroy();
+}
+
+async function loadAnalytics() {
+  const data = await apiFetch('/api/admin/analytics');
+  const a = data.analytics || {};
+
+  document.getElementById('sTotalOrders').textContent = a.totalOrders || 0;
+  document.getElementById('sTotalRevenue').textContent = 'Rs ' + Number(a.totalRevenue || 0).toLocaleString('en-IN');
+  document.getElementById('sPaidOrders').textContent = a.paymentModeCounts?.RAZORPAY || 0;
+  document.getElementById('sCodOrders').textContent = a.paymentModeCounts?.COD || 0;
+
+  destroyCharts();
+
+  const revCtx = document.getElementById('revenueChart').getContext('2d');
+  const days = (a.dailyRevenue || []).slice(-14);
+  revenueChart = new Chart(revCtx, {
+    type: 'line',
+    data: {
+      labels: days.map(d => {
+        try {
+          const parts = d.date.split('-');
+          return parts[2] + '/' + parts[1]; // Format DD/MM
+        } catch(e) { return d.date; }
+      }),
+      datasets: [{
+        label: 'Revenue',
+        data: days.map(d => d.revenue),
+        borderColor: '#1b8354',
+        backgroundColor: 'rgba(27,131,84,0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 3
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  const statusCtx = document.getElementById('statusChart').getContext('2d');
+  const statusLabels = Object.keys(a.statusCounts || {});
+  const statusData = Object.values(a.statusCounts || {});
+  const statusColors = ['#1b8354', '#f97316', '#dc2626', '#035388', '#b45309', '#7c3aed'];
+  statusChart = new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+      labels: statusLabels.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+      datasets: [{ data: statusData, backgroundColor: statusColors, borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+  });
+
+  const payCtx = document.getElementById('paymentChart').getContext('2d');
+  const payLabels = Object.keys(a.paymentModeCounts || {});
+  const payData = Object.values(a.paymentModeCounts || {});
+  paymentChart = new Chart(payCtx, {
+    type: 'pie',
+    data: {
+      labels: payLabels,
+      datasets: [{ data: payData, backgroundColor: ['#1b8354', '#f97316', '#035388'], borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+  });
+
+  const topList = document.getElementById('topProductsList');
+  const topProducts = a.topProducts || [];
+  if (!topProducts.length) {
+    topList.innerHTML = '<div class="empty-state">No sales data yet.</div>';
+  } else {
+    const max = topProducts[0].count;
+    topList.innerHTML = topProducts.map(p => `
+      <div class="product-bar">
+        <div class="name">${p.name}</div>
+        <div class="bar-wrap"><div class="bar" style="width:${(p.count / max * 100)}%"></div></div>
+        <div class="count">${p.count}</div>
+      </div>
+    `).join('');
+  }
+}
+
+document.getElementById('authForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const response = await apiFetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: document.getElementById('adminPassword').value }) });
+    setSessionKey(response.sessionKey);
+    document.getElementById('authView').classList.add('hidden');
+    document.getElementById('dashboardView').classList.remove('hidden');
+    await loadAnalytics();
+  } catch (err) { showMsg(document.getElementById('message'), err.message || 'Login failed', 'error'); }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try {
+    await apiFetch('/api/admin/logout-all', { method: 'POST' });
+  } catch (err) { console.error(err); }
+  finally {
+    clearSessionKey();
+    location.reload();
+  }
+});
+document.getElementById('refreshBtn').addEventListener('click', loadAnalytics);
+
+// Mobile menu functionality
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const mobileOverlay = document.getElementById('mobileOverlay');
+const sidebar = document.querySelector('.sidebar');
+if (mobileMenuBtn && mobileOverlay && sidebar) {
+  mobileMenuBtn.addEventListener('click', () => { sidebar.classList.add('show'); mobileOverlay.style.display = 'block'; });
+  mobileOverlay.addEventListener('click', () => { sidebar.classList.remove('show'); mobileOverlay.style.display = 'none'; });
+  sidebar.addEventListener('click', (e) => { if (e.target.classList.contains('sidebar-link')) { sidebar.classList.remove('show'); mobileOverlay.style.display = 'none'; } });
+}
+
+async function checkAuthOnLoad() {
+  clearLegacyLocalStorageSession();
+  if (shouldResetSessionForCurrentEntry()) clearSessionKey();
+  const sessionKey = getSessionKey();
+  if (sessionKey) {
+    try {
+      const response = await apiFetch('/api/admin/check-session');
+      if (response.success) {
+        document.getElementById('authView').classList.add('hidden');
+        document.getElementById('dashboardView').classList.remove('hidden');
+        await loadAnalytics();
+      } else {
+        clearSessionKey();
+      }
+    } catch (err) { clearSessionKey(); }
+  }
+}
+checkAuthOnLoad();
+</script>
+</body>
+</html>
