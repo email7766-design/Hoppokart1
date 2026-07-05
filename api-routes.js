@@ -161,7 +161,7 @@ async function sendEmailNotification(order) {
       to: toEmail,
       subject: `Order Confirmed! - Order ID: ${order.id}`,
       html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
           <div style="background: #1b8354; color: white; padding: 30px; text-align: center;">
             <h1 style="margin: 0; font-size: 24px;">Order Confirmed!</h1>
             <p style="margin: 10px 0 0; opacity: 0.9;">Thank you for shopping with ${config.businessName || BUSINESS_NAME}</p>
@@ -356,7 +356,8 @@ router.get('/products', async (req, res) => { // Public endpoint for storefront 
     const startIdx = (page - 1) * limit;
     const paginatedProducts = products.slice(startIdx, startIdx + limit);
     
-    res.set('Cache-Control', 'public, max-age=600'); // Cache for 10 minutes
+    // Cache each page separately - pagination shouldn't use a global cache
+    res.set('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes, not 10
     res.json({ 
       success: true, 
       products: paginatedProducts,
@@ -847,7 +848,7 @@ router.get('/admin/analytics', authenticateAdmin, async (req, res) => {
 
 /* ── SEO APIs ── */
 // Dynamic Sitemap for search engines
-router.get('/api/sitemap.xml', async (req, res) => {
+router.get('/sitemap.xml', async (req, res) => {
   try {
     const products = await db.getProducts();
     const host = req.protocol + '://' + req.get('host');
